@@ -80,21 +80,34 @@
   let selectedDate = "";
   window.onload = async () => { member ? showMain() : await loadMembers(); };
   async function loadMembers() {
-    const loading=document.getElementById("member-loading"), errorEl=document.getElementById("member-error"), listEl=document.getElementById("member-list"), hint=document.getElementById("select-hint");
+    const loading=document.getElementById("member-loading"),errorEl=document.getElementById("member-error"),listEl=document.getElementById("member-list"),hint=document.getElementById("select-hint");
     try {
-      const res=await fetch(GAS_URL+"?action=getMembers"), data=await res.json();
+      const res=await fetch(GAS_URL+"?action=getMembers"),data=await res.json();
       loading.style.display="none";
       if(!data.members||data.members.length===0){errorEl.textContent="メンバーが見つかりません";errorEl.style.display="block";return;}
       if(data.members.length===1){selectMember(data.members[0]);return;}
       listEl.innerHTML="";
       data.members.forEach(name=>{const btn=document.createElement("button");btn.className="member-btn";btn.textContent=name;btn.onclick=()=>selectMember(name);listEl.appendChild(btn);});
-      listEl.style.display="flex"; hint.style.display="block";
+      listEl.style.display="flex";hint.style.display="block";
     } catch(e){loading.style.display="none";errorEl.textContent="読み込みエラー: "+e.message;errorEl.style.display="block";}
   }
   function selectMember(name){member=name;localStorage.setItem(MEMBER_KEY,member);showMain();}
   function changeMember(){localStorage.removeItem(MEMBER_KEY);member="";document.getElementById("member-screen").style.display="flex";document.getElementById("main-screen").style.display="none";document.getElementById("member-loading").style.display="block";document.getElementById("member-list").style.display="none";document.getElementById("member-error").style.display="none";document.getElementById("select-hint").style.display="none";loadMembers();}
   function showMain(){document.getElementById("member-screen").style.display="none";document.getElementById("main-screen").style.display="flex";document.getElementById("display-member").textContent=member;buildDateTabs();updateDisplay();}
-  function buildDateTabs(){const tabs=document.getElementById("date-tabs");tabs.innerHTML="";const now=new Date(),today=fmt(now),tmrw=new Date(now);tmrw.setDate(tmrw.getDate()+1);const tmrwFmt=fmt(tmrw),saved=localStorage.getItem(DATE_KEY)||today;selectedDate=(saved===today||saved===tmrwFmt)?saved:today;[{label:"今日 "+today,val:today},{label:"明日 "+tmrwFmt,val:tmrwFmt}].forEach(d=>{const btn=document.createElement("button");btn.className="date-tab"+(selectedDate===d.val?" active":"");btn.textContent=d.label;btn.onclick=(e)=>{e.stopPropagation();document.querySelectorAll(".date-tab").forEach(b=>b.classList.remove("active"));btn.classList.add("active");selectedDate=d.val;localStorage.setItem(DATE_KEY,selectedDate);};tabs.appendChild(btn);});localStorage.setItem(DATE_KEY,selectedDate);}
+  function buildDateTabs(){
+    const tabs=document.getElementById("date-tabs");tabs.innerHTML="";
+    const now=new Date(),today=fmt(now);
+    const yest=new Date(now);yest.setDate(yest.getDate()-1);
+    const yestFmt=fmt(yest);
+    const saved=localStorage.getItem(DATE_KEY)||today;
+    selectedDate=(saved===today||saved===yestFmt)?saved:today;
+    [{label:"昨日 "+yestFmt,val:yestFmt},{label:"今日 "+today,val:today}].forEach(d=>{
+      const btn=document.createElement("button");btn.className="date-tab"+(selectedDate===d.val?" active":"");btn.textContent=d.label;
+      btn.onclick=(e)=>{e.stopPropagation();document.querySelectorAll(".date-tab").forEach(b=>b.classList.remove("active"));btn.classList.add("active");selectedDate=d.val;localStorage.setItem(DATE_KEY,selectedDate);};
+      tabs.appendChild(btn);
+    });
+    localStorage.setItem(DATE_KEY,selectedDate);
+  }
   function fmt(date){return(date.getMonth()+1)+"/"+date.getDate();}
   let isTouching=false;
   function handleTouchStart(){isTouching=true;document.getElementById("tap-area").classList.add("pressed");}
